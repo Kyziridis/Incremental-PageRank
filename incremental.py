@@ -107,3 +107,7 @@ class IncrementalPersonalizedPageRank2:
             except ZeroDivisionError:
                 print ("List of visit times is empty...")
         return page_ranks
+
+
+
+#arxidies
