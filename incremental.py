@@ -58,34 +58,6 @@ class IncrementalPersonalizedPageRank2:
         self.random_walks.append(random_walk)
         return
 
-    def add_random_walk(self, previous_random_walk):
-        """
-        Takes a given random walk segment and computes random walk of length random_walk_length starting at the final
-        node in the previous random walk. The idea is that once the graph is modified some random walks will be
-        recomputed starting at a given node in the graph.
-        :param previous_random_walk: A random walk segment which is not as long as random_walk_length
-        """
-        random_walk = previous_random_walk
-        c = random.uniform(0, 1)
-        while c > self.reset_probability:
-            if len(list(self.graph.neighbors(random_walk[-1]))) > 0:
-                current_node = random_walk[-1]
-                current_neighbors = list(self.graph.neighbors(current_node))
-                current_edge_weights = array(
-                    [self.graph[current_node][neighbor]['weight'] for neighbor in current_neighbors])
-                cumulated_current_edge_weights = cumsum(current_edge_weights)
-                if cumulated_current_edge_weights[-1] == 0:
-                    break
-                random_id = list(
-                    cumulated_current_edge_weights < (random.uniform(0, 1) * cumulated_current_edge_weights[-1])).index(
-                    False)
-                next_node = current_neighbors[random_id]
-                random_walk.append(next_node)
-                c = random.uniform(0, 1)
-            else:
-                break
-        self.random_walks.append(random_walk)
-        return
 
     def compute_personalized_page_ranks(self):
         """
