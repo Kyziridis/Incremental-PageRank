@@ -15,33 +15,34 @@ import operator
 import os
 import sys
 import matplotlib.pyplot as plt
+###################################################
+os.chdir("/home/dead/Documents/SNACS/Snacs_Final")
+####################################################
 from incremental import IncrementalPersonalizedPageRank2 as inc
 """
 Gnutella Fasoula
 Nodes 	6301
 Edges 	20777
 """
-###################################################
-os.chdir("/home/dead/Documents/SNACS/Snacs_Final")
-####################################################
+
 # Fixing the dataset format
 def preprocess(raw_data):
     # Input: path of a raw dataset
     # Output: data_path of the corrected data
     # Export: Correct Dataset
-    if not os.path.isfile('./'+'corrected'+raw_data):
+    if not os.path.isfile('datasets/'+'corrected'+raw_data):
         start = time()
         pan = pd.read_csv(raw_data, sep="\t", header=None)
         pan = pan.drop(0, axis=0)
         pan.columns= ["Source", "Target"]
-        data_path = 'corrected'+raw_data
+        data_path = 'datasets/corrected'+raw_data
         pan.to_csv(data_path, header=False, sep='\t', index = False )
         print("Time taken for Preprocess: " + str(time()-start))
         print("Exported Dataset ready >_")
         return data_path    
     else: 
-        data_path = 'corrected'+raw_data
-        print("Existing Dataset is Ready >_")
+        data_path = 'datasets/corrected'+raw_data
+        print("Existing Dataset is Ready >_\n")
         return data_path
 
 #data_path = preprocess('p2p-Gnutella08.txt')
@@ -58,10 +59,14 @@ def Import(datapath, discriptives=False):
 
     # Discriptives
     if discriptives:
+        print('\n-------------------------')
+        print('DISCRIPTIVE_STATISTICS')
+        print('-------------------------')
         print('Is Graph directed?: ' + str(nx.is_directed(data)))
-        print('Number of nodes: ' + str(data.number_of_nodes()))
-        print('Number of edges: ' + str(data.number_of_edges()))
-        print('Density: ' + str(nx.density(data)))
+        print('Number of nodes: %i' % data.number_of_nodes())
+        print('Number of edges: %i' % data.number_of_edges())
+        print('Density: %.5f' % nx.density(data))
+        print('-------------------------')
     
     return data
 
@@ -109,12 +114,14 @@ def Evaluate_values(true,pred):
     RMSE = np.sqrt(MSE)
     MAE = np.mean(np.abs((true-pred)))
     eucl = np.linalg.norm(true-pred)
-    print("-------------------")
+    print("\n-----------------")
+    print("ERROR_METRICS")
+    print("-----------------")
     print("| MSE : %.5f |" % MSE)    
     print("| MAE : %.5f |" % MAE)    
     print("| RMSE: %.5f |" % RMSE)    
     print("| Eucl: %.5f |" % eucl)
-    print("-------------------")
+    print("-----------------")
     return MSE, RMSE, MAE, eucl    
 
 def Evaluate_retrieval(true,pred,plot=False):
