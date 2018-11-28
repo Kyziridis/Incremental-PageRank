@@ -30,19 +30,22 @@ def preprocess(raw_data):
     # Input: path of a raw dataset
     # Output: data_path of the corrected data
     # Export: Correct Dataset
-    if not os.path.isfile('datasets/'+'corrected'+raw_data):
+    os.chdir("datasets/")
+    if not os.path.isfile('corrected'+raw_data):
         start = time()
         pan = pd.read_csv(raw_data, sep="\t", header=None)
         pan = pan.drop(0, axis=0)
         pan.columns= ["Source", "Target"]
-        data_path = 'datasets/corrected'+raw_data
+        data_path = 'corrected'+raw_data
         pan.to_csv(data_path, header=False, sep='\t', index = False )
+        os.chdir("../")
         print("Time taken for Preprocess: " + str(time()-start))
         print("Exported Dataset ready >_")
         return data_path    
     else: 
-        data_path = 'datasets/corrected'+raw_data
+        data_path = 'corrected'+raw_data
         print("Existing Dataset is Ready >_\n")
+        os.chdir("../")
         return data_path
 
 #data_path = preprocess('p2p-Gnutella08.txt')
@@ -52,7 +55,7 @@ def Import(datapath, discriptives=False):
     # Function for importing the dataset into networkx
     # Print some statistics
     start = time()
-    with open(datapath, 'rb') as inf:
+    with open('datasets/'+datapath, 'rb') as inf:
         data = nx.read_edgelist(inf,create_using=nx.DiGraph(),\
                                 delimiter='\t', encoding="utf-8")
     print("Time taken for loading final.csv in secs: " + str(time()-start))
@@ -130,12 +133,12 @@ def Evaluate_retrieval(true,pred,plot=False):
     Acc = len(true.intersection(pred))/(len(true) +len(pred))
     jac = len(true.intersection(pred))/len(true.union(pred))
     
-recall = np.linspace(0.0, 1.0, num=42)
-precision = np.random.rand(42)*(1.-recall)
+#recall = np.linspace(0.0, 1.0, num=11)
+#precision = np.random.rand(42)*(1.-recall)
 
 # take a running maximum over the reversed vector of precision values, reverse the
 # result to match the order of the recall vector
-decreasing_max_precision = np.maximum.accumulate(precision[::-1])[::-1]    
+#decreasing_max_precision = np.maximum.accumulate(precision[::-1])[::-1]    
     
 
 if __name__=='__main__':
