@@ -10,14 +10,15 @@ import numpy as np
 import networkx as nx
 from time import time 
 import random
+from sklearn.metrics import f1_score, precision_recall_curve, precision_recall_fscore_support
 import pandas as pd
 import operator
 import os
 import sys
 import matplotlib.pyplot as plt
 ###################################################
-#os.chdir("/home/dead/Documents/SNACS/Snacs_Final")
-os.chdir("/home/melidell024/Desktop/snacs/project/Incremental-PageRank/")
+os.chdir("/home/dead/Documents/SNACS/Snacs_Final")
+#os.chdir("/home/melidell024/Desktop/snacs/project/Incremental-PageRank/")
 ####################################################
 from incremental import IncrementalPersonalizedPageRank2 as inc
 """
@@ -101,6 +102,7 @@ def PPR (data, node, sort = False,  maxiter=500, alpha=0.7, num=10):
         return nodes, values
 
 def Approximate(data, node, sort=False, random=False, num=10):
+    start = time()
     if random: random_node = random.choice(list(data.nodes()))
     else: random_node = node 
     #node = '4'
@@ -118,6 +120,7 @@ def Approximate(data, node, sort=False, random=False, num=10):
     else:
         nodes, values = hat_PPR.keys(),hat_PPR.values()
         nodes, values = list(nodes), list(values)
+    print('Time taken for approximation: ' + str(time()-start))    
     return nodes, values
 
 def Evaluate_values(true,pred):
@@ -138,11 +141,18 @@ def Evaluate_values(true,pred):
     return MSE, RMSE, MAE, eucl    
 
 def Evaluate_retrieval(true,pred,plot=False):
+    ff1 = f1_score(true, pred, average='micro')
     true = set(true)
     pred = set(pred)
     Acc = len(true.intersection(pred))/(len(true) +len(pred))
     jac = len(true.intersection(pred))/len(true.union(pred))
-    
+    print("\n--------------------")
+    print("RETRIEVAL_METRICS")
+    print("--------------------")
+    print("| f1_score: %.4f" % ff1)
+    print("| Accuracy: %.4f" % Acc)
+    print("| Jaccard : %.4f" % jac)
+    print("--------------------")
 #recall = np.linspace(0.0, 1.0, num=11)
 #precision = np.random.rand(42)*(1.-recall)
 
@@ -153,11 +163,12 @@ def Evaluate_retrieval(true,pred,plot=False):
 
 if __name__=='__main__':
     results=[]
-    data_path = preprocess('roadNet-PA.txt',head = 4)
+    data_path = preprocess('p2p-Gnutella08.txt',head = 4)
     data = Import(data_path, discriptives=True, directed=False)
-    t_nodes,t_values = PPR(data, node='4', sort=True, maxiter=500, alpha=0.7, num=20 )
-    hat_nodes, hat_values = Approximate(data,node='4', sort=True, random=False, num=20 )
-    results = Evaluate_values(t_values,hat_values)
+    t_nodes,t_values = PPR(data, node='4', sort=True, maxiter=500, alpha=0.7, num=10 )
+    hat_nodes, hat_values = Approximate(data,node='4', sort=True, random=False, num=10 )
+    results_v = Evaluate_values(t_values,hat_values)
+    results_r = Evaluate_retrieval(t_nodes,hat_nodes)
     
     
     
