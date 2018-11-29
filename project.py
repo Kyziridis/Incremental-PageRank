@@ -47,11 +47,11 @@ def preprocess(raw_data,head=0):
         pan.to_csv(data_path, header=False, sep='\t', index = False )
         os.chdir("../")
         print("Time taken for Preprocess: " + str(time()-start))
-        print("Dataset ready to export >_")
+        print("Dataset preprocessed and exported >_")
         return data_path    
     else: 
         data_path = 'corrected'+raw_data
-        print("Existing Dataset is Ready >_\n")
+        print("Dataset already preprocessed   >_\n")
         os.chdir("../")
         return data_path
 
@@ -69,18 +69,18 @@ def Import(datapath, discriptives=False, directed=True):
     with open('datasets/'+datapath, 'rb') as inf:
         data = nx.read_edgelist(inf,create_using=graph_type,\
                                 delimiter='\t', encoding="utf-8")
-    print("Time taken for loading final.csv in secs: " + str(time()-start))
+    print("Time taken for edgelist loading: %.2fsec" % (time()-start))
 
     # Discriptives
     if discriptives:
         print('\n-------------------------')
-        print('DISCRIPTIVE_STATISTICS')
+        print('DESCRIPTIVE_STATISTICS')
         print('-------------------------')
         print('Is Graph directed?: ' + str(nx.is_directed(data)))
         print('Number of nodes: %i' % data.number_of_nodes())
         print('Number of edges: %i' % data.number_of_edges())
         print('Density: %.5f' % nx.density(data))
-        print('-------------------------')    
+        print('-------------------------\n')    
     return data
 
 # Pagerank
@@ -113,15 +113,15 @@ def Evaluate_values(true,pred):
     eucl = np.linalg.norm(true-pred)
     eucl_norm = np.linalg.norm(true-pred)/np.linalg.norm(pred)
     lala = np.max(true-pred)/np.max(true)
-    print("\n-----------------")
+    print("\n-------------")
     print("ERROR_METRICS")
-    print("-----------------")  
+    print("-------------------")  
     print("| MAE   : %.5f |" % MAE)    
     print("| RMSE  : %.5f |" % RMSE)
     print("| Eucl  : %.5f |" % eucl)    
     print("| Eucl_n: %.5f |" % eucl_norm)
     print("| Suprem: %.5f |" % lala)
-    print("-----------------")
+    print("-------------------")
     return true, pred
     
 
@@ -137,32 +137,39 @@ def Evaluate_retrieval(true,pred, k=10):
     
     Acc = len(true.intersection(pred))/(len(true))
     jac = len(true.intersection(pred))/len(true.union(pred))
-    print("\n--------------------")
+    print("\n-----------------")
     print("RETRIEVAL_METRICS")
     print("--------------------")
-    print("| f1_score: %.4f" % ff1)
-    print("| Accuracy: %.4f" % Acc)
-    print("| Jaccard : %.4f" % jac)
+    print("| f1_score: %.4f |" % ff1)
+    print("| Accuracy: %.4f |" % Acc)
+    print("| Jaccard : %.4f |" % jac)
     print("--------------------")
     return true, pred
   
 
 if __name__=='__main__':
-    results_r = []
-    results_v = []
-    data_path = preprocess('p2p-Gnutella08.txt', head=0)
-    data = Import(data_path, discriptives=True, directed=True)
-    
-    flag = input('Random node? [y/n] >_ ')
-    if flag=='y' or flag =='yes': node = random.choice(list(data.nodes())); print('Node : %s' % node)
-    else : node = input('Insert node >_ ')
-    
-    true = PPR(data, node=node )
-    hat = Approximate(data,node=node)
-    results_v = Evaluate_values(true,hat)
-    results_r = Evaluate_retrieval(true,hat)
-    
-    
+    data = ['p2p-Gnutella31.txt','p2p-Gnutella08.txt', 'roadNet-PA-sample.txt']
+    for dataset in data:
+        print('')
+        print("Network-Dataset: || %s ||" % dataset)
+        print("-----------------------------------------------")
+        results_r = []
+        results_v = []
+        data_path = preprocess(dataset, head=3)
+        data = Import(data_path, discriptives=True, directed=False)
+        
+        flag = input('Random node? [y/n] >_ ')
+        if flag=='y' or flag =='yes': node = random.choice(list(data.nodes())); print('Node : %s\n' % node)
+        else : node = input('Insert node >_ ')
+        
+        true = PPR(data, node=node )
+        hat = Approximate(data,node=node)
+        results_v = Evaluate_values(true,hat)
+        results_r = Evaluate_retrieval(true,hat)
+        print("\n-------------------------")
+        print(">_ SUPPORT GNU/Linux  >_")
+        print("-------------------------\n")
+        print('')
     
 
 
