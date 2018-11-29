@@ -4,6 +4,9 @@
 Created on Fri Nov 16 17:21:19 2018
 
 @author: s2077981
+
+The code is taken from Tribler/incremental-pagerank github repository: https://github.com/Tribler/incremental-pagerank
+
 """
 import random
 import numpy as np
@@ -12,7 +15,7 @@ import networkx as nx
 
 class IncrementalPersonalizedPageRank2:
    
-    def __init__(self, graph, node, number_of_random_walks=1000, reset_probability=0.2):
+    def __init__(self, graph, node, number_of_random_walks, reset_probability=0.2):
         """
         Initializes the incremental personalized page rank class by determining the graph, the seed node, the number
         of random walks, the reset probability and the length of each random walk.

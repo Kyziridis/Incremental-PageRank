@@ -42,12 +42,12 @@ def preprocess(raw_data,head=0):
         start = time()
         pan = pd.read_csv(raw_data, sep="\t", header=head)
         #pan = pan.drop(0, axis=0)
-        pan.columns= ["Source", "Target"]
+        #pan.columns= ["Source", "Target"]
         data_path = 'corrected'+raw_data
         pan.to_csv(data_path, header=False, sep='\t', index = False )
         os.chdir("../")
         print("Time taken for Preprocess: " + str(time()-start))
-        print("Exported Dataset ready >_")
+        print("Dataset ready to export >_")
         return data_path    
     else: 
         data_path = 'corrected'+raw_data
@@ -80,71 +80,62 @@ def Import(datapath, discriptives=False, directed=True):
         print('Number of nodes: %i' % data.number_of_nodes())
         print('Number of edges: %i' % data.number_of_edges())
         print('Density: %.5f' % nx.density(data))
-        print('-------------------------')
-    
+        print('-------------------------')    
     return data
 
-#data = Import(data_path, discriptives=True)
-
 # Pagerank
-def PPR (data, node, sort = False,  maxiter=500, alpha=0.7, num=10):
+def PPR (data, node, maxiter=500, alpha=0.7):
     start = time()    
     truePPR = nx.pagerank(data, alpha=alpha, personalization={node: 1}, max_iter=maxiter)
-    print("Time taken for PageRank computation: " + str(time()-start))
-    if sort:
-        true_spr = sorted(truePPR.items(),key=operator.itemgetter(1),reverse=True)
-        nodes = [n for n,_ in true_spr]
-        values = [v for _,v in true_spr]
-        return nodes[0:num], values[0:num]
-    else:
-        nodes,values = truePPR.keys(), truePPR.values()
-        nodes, values = list(nodes), list(values)
-        return nodes, values
+    print("Time taken for PageRank computation: %.2fsec" % (time()-start))
+    return truePPR
 
-def Approximate(data, node, sort=False, random=False, num=10):
+def Approximate(data, node, n_walks=1000):
     start = time()
-    if random: random_node = random.choice(list(data.nodes()))
-    else: random_node = node 
-    #node = '4'
-    # Init the Class
-    increment = inc(graph=data, node=random_node)
-    # initial random walks
+    increment = inc(graph=data, node=node, number_of_random_walks=n_walks)
     increment.initial_random_walks()
-    # Hat sorted_Approximation PPR
     hat_PPR = increment.compute_personalized_page_ranks()
-    if sort:
-        sort_hat_PPR = sorted(hat_PPR.items(), key=operator.itemgetter(1), reverse=True)
-        nodes = [n for n,_ in sort_hat_PPR]
-        values = [v for _,v in sort_hat_PPR]
-        nodes, values = nodes[0:num], values[0:num]
-    else:
-        nodes, values = hat_PPR.keys(),hat_PPR.values()
-        nodes, values = list(nodes), list(values)
-    print('Time taken for approximation: ' + str(time()-start))    
-    return nodes, values
+    print('Time taken for Approximation: %.2fsec' % (time()-start))    
+    return hat_PPR
 
 def Evaluate_values(true,pred):
-    true = np.array(true)
-    pred = np.array(pred)
+    true = sorted(true.items(), key=operator.itemgetter(0), reverse=True)
+    pred = sorted(pred.items(), key=operator.itemgetter(0), reverse=True)
+    true_values = [v for _,v in true]
+    pred_values = [v for _,v in pred]
+    
+    true = np.array(true_values)
+    pred = np.array(pred_values)
+    
     MSE = np.mean((true-pred)**2)
     RMSE = np.sqrt(MSE)
     MAE = np.mean(np.abs((true-pred)))
     eucl = np.linalg.norm(true-pred)
+    eucl_norm = np.linalg.norm(true-pred)/np.linalg.norm(pred)
+    lala = np.max(true-pred)/np.max(true)
     print("\n-----------------")
     print("ERROR_METRICS")
+    print("-----------------")  
+    print("| MAE   : %.5f |" % MAE)    
+    print("| RMSE  : %.5f |" % RMSE)
+    print("| Eucl  : %.5f |" % eucl)    
+    print("| Eucl_n: %.5f |" % eucl_norm)
+    print("| Suprem: %.5f |" % lala)
     print("-----------------")
-    print("| MSE : %.5f |" % MSE)    
-    print("| MAE : %.5f |" % MAE)    
-    print("| RMSE: %.5f |" % RMSE)    
-    print("| Eucl: %.5f |" % eucl)
-    print("-----------------")
-    return MSE, RMSE, MAE, eucl    
+    return true, pred
+    
 
-def Evaluate_retrieval(true,pred,plot=False):
-    ff1 = f1_score(true, pred, average='micro')
-    true = set(true)
-    pred = set(pred)
-    Acc = len(true.intersection(pred))/(len(true) +len(pred))
+def Evaluate_retrieval(true,pred, k=10):
+    true = sorted(true.items(), key=operator.itemgetter(1), reverse=True)
+    pred = sorted(pred.items(), key=operator.itemgetter(1), reverse=True)
+    true_nodes = [n for n,_ in true[0:k]]
+    pred_nodes = [n for n,_ in pred[0:k]]
+        
+    ff1 = f1_score(true_nodes, pred_nodes, average='micro')
+    true = set(true_nodes)
+    pred = set(pred_nodes)
+    
+    Acc = len(true.intersection(pred))/(len(true))
     jac = len(true.intersection(pred))/len(true.union(pred))
     print("\n--------------------")
     print("RETRIEVAL_METRICS")
@@ -153,22 +144,23 @@ def Evaluate_retrieval(true,pred,plot=False):
     print("| Accuracy: %.4f" % Acc)
     print("| Jaccard : %.4f" % jac)
     print("--------------------")
-#recall = np.linspace(0.0, 1.0, num=11)
-#precision = np.random.rand(42)*(1.-recall)
-
-# take a running maximum over the reversed vector of precision values, reverse the
-# result to match the order of the recall vector
-#decreasing_max_precision = np.maximum.accumulate(precision[::-1])[::-1]    
-    
+    return true, pred
+  
 
 if __name__=='__main__':
-    results=[]
-    data_path = preprocess('p2p-Gnutella08.txt',head = 4)
-    data = Import(data_path, discriptives=True, directed=False)
-    t_nodes,t_values = PPR(data, node='4', sort=True, maxiter=500, alpha=0.7, num=10 )
-    hat_nodes, hat_values = Approximate(data,node='4', sort=True, random=False, num=10 )
-    results_v = Evaluate_values(t_values,hat_values)
-    results_r = Evaluate_retrieval(t_nodes,hat_nodes)
+    results_r = []
+    results_v = []
+    data_path = preprocess('p2p-Gnutella08.txt', head=0)
+    data = Import(data_path, discriptives=True, directed=True)
+    
+    flag = input('Random node? [y/n] >_ ')
+    if flag=='y' or flag =='yes': node = random.choice(list(data.nodes())); print('Node : %s' % node)
+    else : node = input('Insert node >_ ')
+    
+    true = PPR(data, node=node )
+    hat = Approximate(data,node=node)
+    results_v = Evaluate_values(true,hat)
+    results_r = Evaluate_retrieval(true,hat)
     
     
     
