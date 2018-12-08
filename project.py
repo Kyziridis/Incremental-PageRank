@@ -113,6 +113,7 @@ def Evaluate_values(true,pred):
     eucl = np.linalg.norm(true-pred)
     eucl_norm = np.linalg.norm(true-pred)/np.linalg.norm(pred)
     lala = np.max(true-pred)/np.max(true)
+    cor = np.corrcoef(true,pred)
     print("\n-------------")
     print("ERROR_METRICS")
     print("-------------------")  
@@ -121,8 +122,9 @@ def Evaluate_values(true,pred):
     print("| Eucl  : %.5f |" % eucl)    
     print("| Eucl_n: %.5f |" % eucl_norm)
     print("| Suprem: %.5f |" % lala)
+    print("| Correl: %.5f |" % cor[0,1])
     print("-------------------")
-    return true, pred
+    return MAE, RMSE, eucl, eucl_norm, lala, cor[0,1]
     
 
 def Evaluate_retrieval(true,pred, k=10):
@@ -144,28 +146,29 @@ def Evaluate_retrieval(true,pred, k=10):
     print("| Accuracy: %.4f |" % Acc)
     print("| Jaccard : %.4f |" % jac)
     print("--------------------")
-    return true, pred
-  
+    return ff1, Acc, jac # kai oti allo valoume edw:P
+
 
 if __name__=='__main__':
-    data = ['p2p-Gnutella31.txt','p2p-Gnutella08.txt', 'roadNet-PA-sample.txt']
+    data = ['p2p-Gnutella08.txt', 'roadNet-PA-sample.txt']
     for dataset in data:
         print('')
         print("Network-Dataset: || %s ||" % dataset)
         print("-----------------------------------------------")
+        os.mkdir(dataset)
         results_r = []
         results_v = []
         data_path = preprocess(dataset, head=3)
         data = Import(data_path, discriptives=True, directed=False)
+        for _ in range(10):
+            node = random.choice(list(data.nodes()))
+            true = PPR(data, node=node )
+            hat = Approximate(data,node=node)
+            results_v.append( Evaluate_values(true,hat))
+            results_r.append(Evaluate_retrieval(true,hat))
         
-        flag = input('Random node? [y/n] >_ ')
-        if flag=='y' or flag =='yes': node = random.choice(list(data.nodes())); print('Node : %s\n' % node)
-        else : node = input('Insert node >_ ')
-        
-        true = PPR(data, node=node )
-        hat = Approximate(data,node=node)
-        results_v = Evaluate_values(true,hat)
-        results_r = Evaluate_retrieval(true,hat)
+        np.save(dataset+'/retrieval', np.array(results_r))
+        np.save(dataset+'/statistics', np.array(results_v))
         print("\n-------------------------")
         print(">_ SUPPORT GNU/Linux  >_")
         print("-------------------------\n")
