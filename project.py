@@ -16,6 +16,7 @@ import operator
 import os
 import sys
 import matplotlib.pyplot as plt
+from tqdm import tqdm
 ###################################################
 os.chdir("/home/dead/Documents/SNACS/Snacs_Final")
 #os.chdir("/home/melidell024/Desktop/snacs/project/Incremental-PageRank/")
@@ -87,7 +88,7 @@ def Import(datapath, discriptives=False, directed=True):
 def PPR (data, node, maxiter=500, alpha=0.7):
     start = time()    
     truePPR = nx.pagerank(data, alpha=alpha, personalization={node: 1}, max_iter=maxiter)
-    print("Time taken for PageRank computation: %.2fsec" % (time()-start))
+    #print("\nTime taken for PageRank computation: %.2fsec" % (time()-start))
     return truePPR
 
 def Approximate(data, node, n_walks=1000):
@@ -95,7 +96,7 @@ def Approximate(data, node, n_walks=1000):
     increment = inc(graph=data, node=node, number_of_random_walks=n_walks)
     increment.initial_random_walks()
     hat_PPR = increment.compute_personalized_page_ranks()
-    print('Time taken for Approximation: %.2fsec' % (time()-start))    
+    #print('\nTime taken for Approximation: %.2fsec' % (time()-start))    
     return hat_PPR
 
 def Evaluate_values(true,pred):
@@ -114,16 +115,6 @@ def Evaluate_values(true,pred):
     eucl_norm = np.linalg.norm(true-pred)/np.linalg.norm(pred)
     lala = np.max(true-pred)/np.max(true)
     cor = np.corrcoef(true,pred)
-    print("\n-------------")
-    print("ERROR_METRICS")
-    print("-------------------")  
-    print("| MAE   : %.5f |" % MAE)    
-    print("| RMSE  : %.5f |" % RMSE)
-    print("| Eucl  : %.5f |" % eucl)    
-    print("| Eucl_n: %.5f |" % eucl_norm)
-    print("| Suprem: %.5f |" % lala)
-    print("| Correl: %.5f |" % cor[0,1])
-    print("-------------------")
     return MAE, RMSE, eucl, eucl_norm, lala, cor[0,1]
     
 
@@ -139,18 +130,17 @@ def Evaluate_retrieval(true,pred, k=10):
     
     Acc = len(true.intersection(pred))/(len(true))
     jac = len(true.intersection(pred))/len(true.union(pred))
-    print("\n-----------------")
-    print("RETRIEVAL_METRICS")
-    print("--------------------")
-    print("| f1_score: %.4f |" % ff1)
-    print("| Accuracy: %.4f |" % Acc)
-    print("| Jaccard : %.4f |" % jac)
-    print("--------------------")
     return ff1, Acc, jac # kai oti allo valoume edw:P
 
-
+def mean_statistics(v,r):
+    results = np.array(v)
+    retrieval = np.array(r)
+    avg_v = np.mean(results, axis=0)
+    avg_r = np.mean(retrieval, axis=0)
+    return avg_v, avg_r  
+    
 if __name__=='__main__':
-    data = ['p2p-Gnutella08.txt', 'roadNet-PA-sample.txt']
+    data = ['p2p-Gnutella08.txt']#, 'roadNet-PA-sample.txt']
     for dataset in data:
         print('')
         print("Network-Dataset: || %s ||" % dataset)
@@ -160,13 +150,16 @@ if __name__=='__main__':
         results_v = []
         data_path = preprocess(dataset, head=3)
         data = Import(data_path, discriptives=True, directed=False)
-        for _ in range(10):
+        
+        for _ in tqdm(range(10), total=10):
             node = random.choice(list(data.nodes()))
             true = PPR(data, node=node )
             hat = Approximate(data,node=node)
             results_v.append( Evaluate_values(true,hat))
             results_r.append(Evaluate_retrieval(true,hat))
-        
+        avg_v, avg_r = mean_statistics(results_v,results_r)
+        np.save(dataset+'/avg_r', avg_r)
+        np.save(dataset+'/avg_v', avg_v)
         np.save(dataset+'/retrieval', np.array(results_r))
         np.save(dataset+'/statistics', np.array(results_v))
         print("\n-------------------------")
