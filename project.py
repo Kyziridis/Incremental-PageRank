@@ -18,10 +18,11 @@ import sys
 import matplotlib.pyplot as plt
 from tqdm import tqdm
 ###################################################
-os.chdir("/home/dead/Documents/SNACS/Snacs_Final")
-#os.chdir("/home/melidell024/Desktop/snacs/project/Incremental-PageRank/")
+#os.chdir("/home/dead/Documents/SNACS/Snacs_Final")
+os.chdir("/home/melidell024/Desktop/snacs/project/Incremental-PageRank/")
 ####################################################
 from incremental import IncrementalPersonalizedPageRank2 as inc
+from retrieval_metrics import mean_average_precision,plot_precision
 """
 Gnutella Fasoula
 Nodes 	6301
@@ -86,13 +87,13 @@ def Import(datapath, discriptives=False, directed=True):
 
 # Pagerank
 def PPR (data, node, maxiter=500, alpha=0.7):
-    start = time()    
+    #start = time()    
     truePPR = nx.pagerank(data, alpha=alpha, personalization={node: 1}, max_iter=maxiter)
     #print("\nTime taken for PageRank computation: %.2fsec" % (time()-start))
     return truePPR
 
 def Approximate(data, node, n_walks=1000):
-    start = time()
+    #start = time()
     increment = inc(graph=data, node=node, number_of_random_walks=n_walks)
     increment.initial_random_walks()
     hat_PPR = increment.compute_personalized_page_ranks()
@@ -118,35 +119,65 @@ def Evaluate_values(true,pred):
     return MAE, RMSE, eucl, eucl_norm, lala, cor[0,1]
     
 
-def Evaluate_retrieval(true,pred, k=10):
+def Evaluate_retrieval(true,pred, k):
     true = sorted(true.items(), key=operator.itemgetter(1), reverse=True)
     pred = sorted(pred.items(), key=operator.itemgetter(1), reverse=True)
     true_nodes = [n for n,_ in true[0:k]]
-    pred_nodes = [n for n,_ in pred[0:k]]
+    pred_nodes = [n for n,_ in pred[0:k*10]]
         
-    ff1 = f1_score(true_nodes, pred_nodes, average='micro')
+    #ff1 = f1_score(true_nodes, pred_nodes, average='micro')
     true = set(true_nodes)
-    pred = set(pred_nodes)
+    pred = set(pred_nodes[0:k])
     
-    Acc = len(true.intersection(pred))/(len(true))
+    #ranked retrieval
+    true_r = np.array(pred_nodes)
+    pred_r = np.array(true_nodes)
+    
+    retrieval_array = np.isin(true_r,pred_r)
+    #precision = r_precision(retrieval_array)
+    #avg_precision = average_precision(retrieval_array)
+    #m_avg_precision = mean_average_precision(list(retrieval_array))
+    
+    #print("precision:",precision)
+   # print("average precision:",avg_precision)
+    #print("out :",len(retrieval_array))
+    #print("mean average precision:",m_avg_precision)
+    
+    #Acc = len(true.intersection(pred))/(len(true))
     jac = len(true.intersection(pred))/len(true.union(pred))
-    return ff1, Acc, jac # kai oti allo valoume edw:P
-
-def mean_statistics(v,r):
-    results = np.array(v)
-    retrieval = np.array(r)
-    avg_v = np.mean(results, axis=0)
-    avg_r = np.mean(retrieval, axis=0)
-    return avg_v, avg_r  
     
+    return  retrieval_array, jac # kai oti allo valoume edw:P
+
+def mean_statistics(v,r, r_jacc,k):
+    results = np.array(v)
+    #retrieval = np.array(r)
+    avg_v = np.mean(results, axis=0)
+    Map = mean_average_precision(r)#[0]
+    #poutses = mean_average_precision(r)[1]
+    poutses,outs = plot_precision(r,k)
+    avg_jacc = np.mean(r_jacc)
+    return avg_v, Map, poutses, avg_jacc,outs
+    
+def plotting(x):
+    plt.figure()
+    plt.plot(x)
+    plt.xlabel("Recall")
+    plt.ylabel("Precission")
+    plt.title("Mean Interpolated Average Precission")
+    plt.savefig(dataset+'plot.png')
+    plt.show()
+
 if __name__=='__main__':
     data = ['p2p-Gnutella08.txt']#, 'roadNet-PA-sample.txt']
+    k=100
     for dataset in data:
         print('')
         print("Network-Dataset: || %s ||" % dataset)
         print("-----------------------------------------------")
-        os.mkdir(dataset)
-        results_r = []
+        if not os.path.exists(dataset):
+            os.mkdir(dataset)
+        results_retrieval = []
+        results_jaccard = []
         results_v = []
         data_path = preprocess(dataset, head=3)
         data = Import(data_path, discriptives=True, directed=False)
@@ -156,11 +187,14 @@ if __name__=='__main__':
             true = PPR(data, node=node )
             hat = Approximate(data,node=node)
             results_v.append( Evaluate_values(true,hat))
-            results_r.append(Evaluate_retrieval(true,hat))
-        avg_v, avg_r = mean_statistics(results_v,results_r)
-        np.save(dataset+'/avg_r', avg_r)
+            results_retrieval.append(Evaluate_retrieval(true,hat,k)[0])
+            results_jaccard.append(Evaluate_retrieval(true,hat,k)[1])
+        
+        avg_v, Map, p, avg_jacc,outs= mean_statistics(results_v,results_retrieval, results_jaccard,k)
+        plotting(p)
+        np.save(dataset+'/Map', Map)
         np.save(dataset+'/avg_v', avg_v)
-        np.save(dataset+'/retrieval', np.array(results_r))
+        np.save(dataset+'/retrieval', np.array(results_retrieval))
         np.save(dataset+'/statistics', np.array(results_v))
         print("\n-------------------------")
         print(">_ SUPPORT GNU/Linux  >_")
