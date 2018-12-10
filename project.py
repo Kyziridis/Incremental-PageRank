@@ -174,9 +174,10 @@ def plotting(x):
     plt.show()
 
 if __name__=='__main__':
-    data = ['goverment.txt']#, 'roadNet-PA-sample.txt']
+    data = ['CA-AstroPh.txt', 'cit-HepPh.txt', 'goverment.txt', 'p2p-Gnutella08.txt', 'p2p-Gnutella31.txt',\
+            'roadNet-CA.txt', 'roadNet-PA.txt', 'roadNet-TX.txt', 'sx-superuser.txt']
     k=100
-    runs = 10
+    runs = 20
     for dataset in data:
         print('')
         print("Network-Dataset: || %s ||" % dataset)
@@ -186,8 +187,10 @@ if __name__=='__main__':
         results_retrieval = []
         results_jaccard = []
         results_v = []
-        data_path = preprocess(dataset, head=3)
-        data = Import(data_path, discriptives=True, directed=False)
+        data_path = preprocess(dataset, head=None)
+        if dataset == 'cit-HepPh.txt' or dataset=='sx-superuser.txt': direct = True
+        else: direct = False
+        data = Import(data_path, discriptives=True, directed=direct)
         
         for _ in tqdm(range(runs), total=runs):
             node = random.choice(list(data.nodes()))
