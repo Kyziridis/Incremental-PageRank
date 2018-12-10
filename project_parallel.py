@@ -19,6 +19,8 @@ import sys
 import matplotlib.pyplot as plt
 plt.switch_backend('agg')
 from tqdm import tqdm
+from joblib import Parallel, delayed
+import multiprocessing
 #import numba as nb
 ###################################################
 os.chdir("/home/dead/Documents/SNACS/Snacs_Final")
