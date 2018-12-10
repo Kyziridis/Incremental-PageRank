@@ -17,9 +17,10 @@ import os
 import sys
 import matplotlib.pyplot as plt
 from tqdm import tqdm
+import numba as nb
 ###################################################
-#os.chdir("/home/dead/Documents/SNACS/Snacs_Final")
-os.chdir("/home/melidell024/Desktop/snacs/project/Incremental-PageRank/")
+os.chdir("/home/dead/Documents/SNACS/Snacs_Final")
+#os.chdir("/home/melidell024/Desktop/snacs/project/Incremental-PageRank/")
 ####################################################
 from incremental import IncrementalPersonalizedPageRank2 as inc
 from retrieval_metrics import mean_average_precision,plot_precision
@@ -59,7 +60,7 @@ def preprocess(raw_data,head=0):
 
 #data_path = preprocess('p2p-Gnutella08.txt')
 ####################################################
-
+#@nb.jit
 def Import(datapath, discriptives=False, directed=True):
     # Function for importing the dataset into networkx
     # Print some statistics
@@ -86,12 +87,14 @@ def Import(datapath, discriptives=False, directed=True):
     return data
 
 # Pagerank
+@nb.jit(parallel=True)
 def PPR (data, node, maxiter=500, alpha=0.7):
     #start = time()    
     truePPR = nx.pagerank(data, alpha=alpha, personalization={node: 1}, max_iter=maxiter)
     #print("\nTime taken for PageRank computation: %.2fsec" % (time()-start))
     return truePPR
 
+@nb.jit(parallel=True)
 def Approximate(data, node, n_walks=1000):
     #start = time()
     increment = inc(graph=data, node=node, number_of_random_walks=n_walks)
@@ -100,6 +103,7 @@ def Approximate(data, node, n_walks=1000):
     #print('\nTime taken for Approximation: %.2fsec' % (time()-start))    
     return hat_PPR
 
+#@nb.jit
 def Evaluate_values(true,pred):
     true = sorted(true.items(), key=operator.itemgetter(0), reverse=True)
     pred = sorted(pred.items(), key=operator.itemgetter(0), reverse=True)
@@ -118,7 +122,7 @@ def Evaluate_values(true,pred):
     cor = np.corrcoef(true,pred)
     return MAE, RMSE, eucl, eucl_norm, lala, cor[0,1]
     
-
+#@nb.jit
 def Evaluate_retrieval(true,pred, k):
     true = sorted(true.items(), key=operator.itemgetter(1), reverse=True)
     pred = sorted(pred.items(), key=operator.itemgetter(1), reverse=True)
@@ -148,6 +152,7 @@ def Evaluate_retrieval(true,pred, k):
     
     return  retrieval_array, jac # kai oti allo valoume edw:P
 
+@nb.jit(parallel=True)
 def mean_statistics(v,r, r_jacc,k):
     results = np.array(v)
     #retrieval = np.array(r)
@@ -157,19 +162,21 @@ def mean_statistics(v,r, r_jacc,k):
     poutses,outs = plot_precision(r,k)
     avg_jacc = np.mean(r_jacc)
     return avg_v, Map, poutses, avg_jacc,outs
-    
+  
 def plotting(x):
-    plt.figure()
+    plt.figure(figsize=(8,6))
+    plt.tick_params(size=5, labelsize=15)
     plt.plot(x)
-    plt.xlabel("Recall")
-    plt.ylabel("Precission")
-    plt.title("Mean Interpolated Average Precission")
-    plt.savefig(dataset+'plot.png')
+    plt.xlabel("Recall", fontsize=15)
+    plt.ylabel("Precission", fontsize=15)
+    plt.title("Mean Interpolated Average Precission", fontsize=15)
+    plt.savefig(dataset+'/plot.png')
     plt.show()
 
 if __name__=='__main__':
     data = ['p2p-Gnutella08.txt']#, 'roadNet-PA-sample.txt']
     k=100
+    runs = 10
     for dataset in data:
         print('')
         print("Network-Dataset: || %s ||" % dataset)
@@ -182,11 +189,11 @@ if __name__=='__main__':
         data_path = preprocess(dataset, head=3)
         data = Import(data_path, discriptives=True, directed=False)
         
-        for _ in tqdm(range(10), total=10):
+        for _ in tqdm(range(runs), total=runs):
             node = random.choice(list(data.nodes()))
             true = PPR(data, node=node )
             hat = Approximate(data,node=node)
-            results_v.append( Evaluate_values(true,hat))
+            results_v.append(Evaluate_values(true,hat))
             results_retrieval.append(Evaluate_retrieval(true,hat,k)[0])
             results_jaccard.append(Evaluate_retrieval(true,hat,k)[1])
         
