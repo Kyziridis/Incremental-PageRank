@@ -174,7 +174,7 @@ def plotting(x):
     plt.show()
 
 if __name__=='__main__':
-    data = ['sx-superuser.txt']#, 'roadNet-PA-sample.txt']
+    data = ['goverment.txt']#, 'roadNet-PA-sample.txt']
     k=100
     runs = 10
     for dataset in data:
