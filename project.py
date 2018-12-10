@@ -19,8 +19,8 @@ import matplotlib.pyplot as plt
 from tqdm import tqdm
 #import numba as nb
 ###################################################
-#os.chdir("/home/dead/Documents/SNACS/Snacs_Final")
-os.chdir("/home/melidell024/Desktop/snacs/project/Incremental-PageRank/")
+os.chdir("/home/dead/Documents/SNACS/Snacs_Final")
+#os.chdir("/home/melidell024/Desktop/snacs/project/Incremental-PageRank/")
 ####################################################
 from incremental import IncrementalPersonalizedPageRank2 as inc
 from retrieval_metrics import mean_average_precision,plot_precision
@@ -174,7 +174,7 @@ def plotting(x):
     plt.show()
 
 if __name__=='__main__':
-    data = ['p2p-Gnutella08.txt']#, 'roadNet-PA-sample.txt']
+    data = ['sx-superuser.txt']#, 'roadNet-PA-sample.txt']
     k=100
     runs = 10
     for dataset in data:
