@@ -17,10 +17,10 @@ import os
 import sys
 import matplotlib.pyplot as plt
 from tqdm import tqdm
-import numba as nb
+#import numba as nb
 ###################################################
-os.chdir("/home/dead/Documents/SNACS/Snacs_Final")
-#os.chdir("/home/melidell024/Desktop/snacs/project/Incremental-PageRank/")
+#os.chdir("/home/dead/Documents/SNACS/Snacs_Final")
+os.chdir("/home/melidell024/Desktop/snacs/project/Incremental-PageRank/")
 ####################################################
 from incremental import IncrementalPersonalizedPageRank2 as inc
 from retrieval_metrics import mean_average_precision,plot_precision
@@ -87,14 +87,14 @@ def Import(datapath, discriptives=False, directed=True):
     return data
 
 # Pagerank
-@nb.jit(parallel=True)
+#@nb.jit(parallel=True)
 def PPR (data, node, maxiter=500, alpha=0.7):
     #start = time()    
     truePPR = nx.pagerank(data, alpha=alpha, personalization={node: 1}, max_iter=maxiter)
     #print("\nTime taken for PageRank computation: %.2fsec" % (time()-start))
     return truePPR
 
-@nb.jit(parallel=True)
+#@nb.jit(parallel=True)
 def Approximate(data, node, n_walks=1000):
     #start = time()
     increment = inc(graph=data, node=node, number_of_random_walks=n_walks)
@@ -152,7 +152,7 @@ def Evaluate_retrieval(true,pred, k):
     
     return  retrieval_array, jac # kai oti allo valoume edw:P
 
-@nb.jit(parallel=True)
+#@nb.jit(parallel=True)
 def mean_statistics(v,r, r_jacc,k):
     results = np.array(v)
     #retrieval = np.array(r)
