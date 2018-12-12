@@ -5,3 +5,4 @@
 - Scalable PageRank Computation
 - Recommendation via PageRank
 
+In order to run the code clone/download the project and use: ``` $ python project.py``` 
